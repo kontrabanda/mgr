@@ -5,10 +5,10 @@ getBordersSP <- function(fileName)
   class(borders.map)
   ncol(borders.map@data)
   
-  borders.map@data <- borders.map@data[ , c(6,16)] #weźmy tylko nazwy województw oraz ich powierzchnie
+  borders.map@data <- borders.map@data[ , c(6,16)]
   names(borders.map@data) <- c("nazwa", "powierzchnia") 
   
-  borders.map <- spTransform(borders.map, CRS("+init=epsg:4326")) #WGS-84
+  borders.map <- spTransform(borders.map, CRS("+init=epsg:4326"))
   
   return (borders.map)
 }
