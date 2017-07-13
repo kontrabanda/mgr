@@ -1,14 +1,17 @@
-getCrimePoints <- function(fileName, latName, lngName, categoryName) {
+getCrimePoints <- function(fileName, latName, lngName, categoryName, categoryFilter = NULL) {
   crimeData <-read.csv(file = fileName, sep = "|")
   
   #filteredCrimeData = crimeData[crimeData$KAT == 'KRA',]
-  print(typeof(crimeData))
   filteredCrimeData = crimeData[ which(crimeData[[latName]] != '' & crimeData[[lngName]] != ''), ]
+  
+  if(!is.null(categoryFilter)) {
+    filteredCrimeData = filteredCrimeData[ which(filteredCrimeData[[categoryName]] != categoryFilter), ]
+  }
   
   lat <- as.numeric(gsub(",", ".", gsub("\\.", "", filteredCrimeData[[latName]])))
   lng <- as.numeric(gsub(",", ".", gsub("\\.", "", filteredCrimeData[[lngName]])))
   category <- filteredCrimeData[[categoryName]]
-  print(lat)
+  
   coords <- data.frame(lng, lat)
   names(coords) <- c("x", "y")
   data <- data.frame(category) 

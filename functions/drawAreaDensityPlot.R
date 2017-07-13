@@ -12,4 +12,6 @@ drawAreaDensityPlot <- function(map, sp, title, label)
   
   map <- ggplot() + geom_polygon(data = map.gg, aes(long, lat, group = group, fill = category), colour = "black", lwd=0.1) + ggtitle(title) + labs(x = "E", y = "N", fill = label)
   map + scale_fill_gradient(low = "white", high = "red")
+  
+  ggsave(paste("./plot/", title), device = "png", width = 8.41, height = 5.78, units = "in")
 }
