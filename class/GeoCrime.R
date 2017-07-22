@@ -3,12 +3,18 @@ GeoCrime <- setRefClass("GeoCrime",
    mapFilePath = "character",
    mapDataSP = "SpatialPolygonsDataFrame",
    crimeDataFilePath = "character",
-   crimeDataSP = "SpatialPointsDataFrame"
+   crimeData = "data.frame",
+   crimeDataSP = "SpatialPointsDataFrame",
+   crimeInRegionDataSP = "SpatialPointsDataFrame",
+   crimeAggregateData = "data.frame"
  ),
  methods = list(
    init = function() {
-     crimeDataSP <<- getCrimeData()
+     crimeData <<- getCrimeData()
+     crimeDataSP <<- getCrimeDataSP()
      mapDataSP <<- getMap()
+     crimeInRegionDataSP <<- getCrimeDataWithinBoarders()
+     crimeAggregateData <<- getAggrateData()
    },
    getMap = function() {
      comMap <- readOGR(mapFilePath)
@@ -19,11 +25,13 @@ GeoCrime <- setRefClass("GeoCrime",
      return (comMap)
    },
    getCrimeData = function() {
+     return (read.csv(file = crimeDataFilePath, sep = "|"))
+   },
+   getCrimeDataSP = function() {
      categoryName <- 'KAT'
      latName <- 'LAT'
      lngName <- 'LNG' 
      
-     crimeData <- read.csv(file = crimeDataFilePath, sep = "|")
      filteredCrimeData = crimeData[ which(crimeData[[latName]] != '' & crimeData[[lngName]] != ''), ]
      category <- filteredCrimeData[[categoryName]]
      
@@ -36,20 +44,28 @@ GeoCrime <- setRefClass("GeoCrime",
      
      return (SpatialPointsDataFrame(coords, data, proj4string = CRS("+init=epsg:4326"), match.ID=TRUE))
    },
-   drawPlot = function() {
+   getCrimeDataWithinBoarders = function() {
      int <- gIntersects(crimeDataSP, mapDataSP, byid = T)
      
      clipped <- apply(!int, MARGIN = 2, all)
-     crime.sp2 <- crimeDataSP[which(!clipped), ]
+     return (crimeDataSP[which(!clipped), ])
+   },
+   getCrimeCategoryColour = function() {
+     dict <- data.frame(
+       id = c("ALK", "BEZP", "CHU", "GOSP", "KRA", "LEG", "OŚ", "PORZ", "RD", "ZWIE"),
+       value = c("green", "hotpink", "indianred", "lightsalmon", "mediumorchid", "orange", "paleturquoise", "yellow", "wheat", "thistle"))
      
-     aggr <- aggregate(x = crime.sp2["category"], by = mapDataSP, FUN = length)
-     
+     return (dict[crimeInRegionDataSP$category, 2, drop=F]$value)
+   },
+   getAggrateData = function() {
+     aggr <- aggregate(x = crimeInRegionDataSP["category"], by = mapDataSP, FUN = length)
      mapDataSP@data$category <<- aggr@data$category
      
      map.gg <- fortify(mapDataSP, region="nazwa")
-     map.gg <- merge(map.gg, mapDataSP@data, by.x="id", by.y="nazwa", sort=FALSE)
-     
-     ggplot() + geom_polygon(data = map.gg, aes(long, lat, group = group, fill = category), colour = "black", lwd=0.1)
+     return (merge(map.gg, mapDataSP@data, by.x="id", by.y="nazwa", sort=FALSE))
+   },
+   drawPlot = function() {
+     return (ggplot() + geom_polygon(data = crimeAggregateData, aes(long, lat, group = group, fill = category), colour = "black", lwd=0.1))
    }
  )
 )
