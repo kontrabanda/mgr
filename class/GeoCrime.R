@@ -15,6 +15,7 @@ GeoCrime <- setRefClass("GeoCrime",
      mapDataSP <<- getMap()
      crimeInRegionDataSP <<- getCrimeDataWithinBoarders()
      crimeAggregateData <<- getAggrateData()
+     crimeInRegionDataSP <<- getCrimeDataWithRegions()
    },
    getMap = function() {
      comMap <- readOGR(mapFilePath)
@@ -50,12 +51,22 @@ GeoCrime <- setRefClass("GeoCrime",
      clipped <- apply(!int, MARGIN = 2, all)
      return (crimeDataSP[which(!clipped), ])
    },
-   getCrimeCategoryColour = function() {
-     dict <- data.frame(
-       id = c("ALK", "BEZP", "CHU", "GOSP", "KRA", "LEG", "OŚ", "PORZ", "RD", "ZWIE"),
-       value = c("green", "hotpink", "indianred", "lightsalmon", "mediumorchid", "orange", "paleturquoise", "yellow", "wheat", "thistle"))
+   getCrimeDataWithRegions = function() {
+     map <- mapDataSP
+     crimes <- crimeInRegionDataSP
+     regionsData <- vector(mode="numeric", length=length(crimes))
+
+     for(i in map$category) {
+       filtredLogi <- map@data$category == i
+       singleRegionMap <- map[filtredLogi, ]
+       int <- gIntersects(crimes, singleRegionMap, byid = T)
+       clipped <- apply(!int, MARGIN = 2, all)
+       regionsData[which(!clipped)] <- i
+     }
      
-     return (dict[crimeInRegionDataSP$category, 2, drop=F]$value)
+     crimes$regions = regionsData
+     
+     return (crimes)
    },
    getAggrateData = function() {
      aggr <- aggregate(x = crimeInRegionDataSP["category"], by = mapDataSP, FUN = length)
